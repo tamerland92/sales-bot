@@ -143,6 +143,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if send_all_photos:
         await _send_photos(context, chat_id)
+        _schedule_followup(context, chat_id)
 
     if any(kw in reply.lower() for kw in MONTAGE_KEYWORDS):
         _schedule_followup(context, chat_id)
@@ -224,6 +225,7 @@ async def handle_class_callback(update: Update, context: ContextTypes.DEFAULT_TY
     # photos — отправить все 3 фото
     elif data == "photos":
         await _send_photos(context, chat_id)
+        _schedule_followup(context, chat_id)
 
 
 async def _send_photos(context, chat_id: int):
