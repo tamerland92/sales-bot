@@ -25,6 +25,8 @@ async def _send_followup(context: ContextTypes.DEFAULT_TYPE):
 
 
 def _schedule_followup(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    if not context.job_queue:
+        return
     job_name = f"followup_{chat_id}"
     for job in context.job_queue.get_jobs_by_name(job_name):
         job.schedule_removal()
@@ -32,6 +34,8 @@ def _schedule_followup(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
 
 
 def _cancel_followup(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    if not context.job_queue:
+        return
     job_name = f"followup_{chat_id}"
     for job in context.job_queue.get_jobs_by_name(job_name):
         job.schedule_removal()
