@@ -7,6 +7,35 @@ from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)
 
+MONTAGE_KEYWORDS = ["выезд специалиста", "20 000 тенге", "щитовая", "маршрут от генератора", "прокладки кабеля", "прокладку кабеля"]
+
+FOLLOWUP_TEXT = (
+    "Пожалуйста, оставьте своё имя и номер телефона — "
+    "мы свяжемся с вами и предоставим официальное коммерческое предложение, "
+    "а также подскажем по наличию."
+)
+
+
+async def _send_followup(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = context.job.data
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=FOLLOWUP_TEXT)
+    except Exception as e:
+        logger.error(f"Ошибка отправки follow-up: {e}")
+
+
+def _schedule_followup(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    job_name = f"followup_{chat_id}"
+    for job in context.job_queue.get_jobs_by_name(job_name):
+        job.schedule_removal()
+    context.job_queue.run_once(_send_followup, when=60, data=chat_id, name=job_name)
+
+
+def _cancel_followup(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    job_name = f"followup_{chat_id}"
+    for job in context.job_queue.get_jobs_by_name(job_name):
+        job.schedule_removal()
+
 ALL_PHOTOS = [
     "photos/canopy.jpg",
     "photos/open.jpg",
@@ -43,6 +72,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     upsert_customer(chat_id, user.username or "", customer_name)
     logger.info(f"📩 [{customer_name}]: {text}")
+    _cancel_followup(context, chat_id)
     await context.bot.send_chat_action(chat_id=chat_id, action="typing")
 
     history = get_history(chat_id, limit=20)
@@ -97,6 +127,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if os.path.exists(photo_path):
                 with open(photo_path, "rb") as f:
                     await context.bot.send_photo(chat_id=chat_id, photo=f)
+
+    if any(kw in reply.lower() for kw in MONTAGE_KEYWORDS):
+        _schedule_followup(context, chat_id)
 
     if order_details:
         order_id = save_order(chat_id, customer_name, order_details)
