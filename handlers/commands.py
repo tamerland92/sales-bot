@@ -9,7 +9,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     shop_name = os.getenv("SHOP_NAME", "Магазин ДизельГен")
     assistant_name = os.getenv("BOT_ASSISTANT_NAME", "Genex")
     await update.message.reply_text(
-        f"Привет! Я Genex — AI ассистент магазина ДизельГен.\n\n"
+        f"Привет! Я AI ассистент ТОО \"Genex\".\n\n"
         "Помогу вам:\n"
         "• Подобрать генератор по мощности и бюджету\n"
         "• Узнать цены и сравнить варианты\n"
