@@ -10,10 +10,10 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from database.db import init_db
 from handlers.commands import start, orders_command
-from handlers.message import handle_message
+from handlers.message import handle_message, handle_class_callback
 
 
 def main():
@@ -27,6 +27,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("orders", orders_command))
+    app.add_handler(CallbackQueryHandler(handle_class_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Бот запущен...")

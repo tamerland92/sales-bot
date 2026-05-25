@@ -115,6 +115,113 @@ def load_catalog() -> str:
 # Порядок классов от дешёвого к дорогому
 CLASS_ORDER = ["низкое качество", "бюджетный", "средний", "бизнес класс", "премиум класс"]
 
+SERIES_NAME = {
+    "низкое качество": "Серия «Эконом»",
+    "бюджетный":       "Серия «Бюджет»",
+    "средний":         "Серия «Стандарт»",
+    "бизнес класс":    "Серия «Бизнес»",
+    "премиум класс":   "Серия «Премиум»",
+}
+SERIES_DESC = {
+    "низкое качество": "Самая низкая цена. Только для очень редкого резервного использования.",
+    "бюджетный":       "Аварийный резерв. До ~150 мото-часов в месяц.",
+    "средний":         "Резервное и периодическое использование. Стабильное качество, увеличенный моторесурс.",
+    "бизнес класс":    "Резервная и постоянная эксплуатация. Высокий моторесурс, развитая сервисная поддержка.",
+    "премиум класс":   "Промышленный уровень. Круглосуточная эксплуатация, максимальная надёжность.",
+}
+
+
+def get_power_classes(target: float, unit: str = "kw", tolerance: float = 0.30) -> list:
+    """Возвращает список классов с моделями для данной мощности."""
+    try:
+        _load_from_sheet()
+    except Exception:
+        return []
+
+    rows = _cache.get("rows", [])
+    if not rows:
+        return []
+
+    field = "nom_kw" if unit == "kw" else "max_kva"
+    low  = target * (1 - tolerance)
+    high = target * (1 + tolerance)
+    candidates = [r for r in rows if low <= r[field] <= high]
+
+    if not candidates:
+        low  = target * 0.5
+        high = target * 1.5
+        candidates = [r for r in rows if low <= r[field] <= high]
+
+    if not candidates:
+        return []
+
+    result = []
+    for cls in CLASS_ORDER:
+        if any(r["variant"] == cls for r in candidates):
+            result.append({
+                "class": cls,
+                "name": SERIES_NAME.get(cls, cls),
+                "desc": SERIES_DESC.get(cls, ""),
+            })
+    return result
+
+
+def find_by_class(target: float, unit: str, class_name: str, tolerance: float = 0.30) -> str:
+    """Возвращает модели конкретного класса для данной мощности."""
+    try:
+        _load_from_sheet()
+    except Exception:
+        return ""
+
+    rows = _cache.get("rows", [])
+    if not rows:
+        return ""
+
+    field = "nom_kw" if unit == "kw" else "max_kva"
+    low  = target * (1 - tolerance)
+    high = target * (1 + tolerance)
+    candidates = [r for r in rows if low <= r[field] <= high and r["variant"] == class_name]
+
+    if not candidates:
+        low  = target * 0.5
+        high = target * 1.5
+        candidates = [r for r in rows if low <= r[field] <= high and r["variant"] == class_name]
+
+    if not candidates:
+        return ""
+
+    unit_label = "кВт" if unit == "kw" else "кВА"
+    name = SERIES_NAME.get(class_name, class_name)
+    desc = SERIES_DESC.get(class_name, "")
+
+    unique_vals = sorted(set(r[field] for r in candidates), key=lambda x: abs(x - target))
+    top_vals = sorted(unique_vals[:3], reverse=True)
+
+    blocks = [f"{name} — подборка ~{target} {unit_label}:\n"]
+
+    for val in top_vals:
+        val_rows = [r for r in candidates if r[field] == val]
+        if unit == "kw":
+            kva = val_rows[0]["nom_kva"] if val_rows else ""
+            blocks.append(f"=== {val} кВт / {kva} кВА ===\n")
+        else:
+            kw = val_rows[0]["max_kw"] if val_rows else ""
+            blocks.append(f"=== {kw} кВт / {val} кВА ===\n")
+
+        for match in val_rows:
+            cl = f"{name} — {match['engine']} {match['model']}\n"
+            cl += f"{desc}\n"
+            cl += f"Номинальная: {match['nom_kw']} кВт / {match['nom_kva']} кВА | Максимальная: {match['max_kw']} кВт / {match['max_kva']} кВА"
+            if match["price_cabinet"]:
+                cl += f"\nКожух с АВР: {match['price_cabinet']}"
+            if match["price_open"]:
+                cl += f"\nОткрытое с АВР: {match['price_open']}"
+            cl += "\nКонтейнерное — цена по запросу"
+            blocks.append(cl)
+            blocks.append("")
+
+    return "\n".join(blocks)
+
 
 def find_by_power(target: float, unit: str = "kw", tolerance: float = 0.30) -> str:
     """
@@ -144,21 +251,6 @@ def find_by_power(target: float, unit: str = "kw", tolerance: float = 0.30) -> s
         return ""
 
     unit_label = "кВт (номинальная)" if unit == "kw" else "кВА (максимальная)"
-
-    SERIES_NAME = {
-        "низкое качество": "Серия «Эконом»",
-        "бюджетный":       "Серия «Бюджет»",
-        "средний":         "Серия «Стандарт»",
-        "бизнес класс":    "Серия «Бизнес»",
-        "премиум класс":   "Серия «Премиум»",
-    }
-    SERIES_DESC = {
-        "низкое качество": "Низкая цена = низкое качество. Только для очень редкого резервного использования.",
-        "бюджетный":       "Аварийное резервное электроснабжение. До ~150 мото-часов в месяц.",
-        "средний":         "Резервное и периодическое использование. Стабильное качество, увеличенный моторесурс.",
-        "бизнес класс":    "Резервная и постоянная эксплуатация. Высокий моторесурс, развитая сервисная поддержка.",
-        "премиум класс":   "Промышленный уровень. Круглосуточная эксплуатация, максимальная надёжность.",
-    }
 
     # 3 ближайших уровня мощности
     unique_vals = sorted(set(r[field] for r in candidates), key=lambda x: abs(x - target))
