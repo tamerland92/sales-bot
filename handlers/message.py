@@ -127,6 +127,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if os.path.exists(photo_path):
                 with open(photo_path, "rb") as f:
                     await context.bot.send_photo(chat_id=chat_id, photo=f)
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="Хотите посмотреть наши реальные объекты? Загляните в наш Instagram — там портфолио выполненных работ:\nhttps://www.instagram.com/genex.kz"
+        )
 
     if any(kw in reply.lower() for kw in MONTAGE_KEYWORDS):
         _schedule_followup(context, chat_id)
