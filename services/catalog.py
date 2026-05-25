@@ -162,7 +162,7 @@ def find_by_power(target: float, unit: str = "kw", tolerance: float = 0.30) -> s
 
     # 3 ближайших уровня мощности
     unique_vals = sorted(set(r[field] for r in candidates), key=lambda x: abs(x - target))
-    top_vals = sorted(unique_vals[:3])
+    top_vals = sorted(unique_vals[:3], reverse=True)
 
     blocks = [f"Подборка генераторов ~{target} {unit_label}:\n"]
 
