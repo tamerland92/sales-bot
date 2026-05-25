@@ -1,0 +1,6 @@
+.env
+google_credentials.json
+sales_bot.db
+__pycache__/
+*.pyc
+.DS_Store
