@@ -143,7 +143,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if send_all_photos:
         await _send_photos(context, chat_id)
-        _schedule_followup(context, chat_id)
 
     if any(kw in reply.lower() for kw in MONTAGE_KEYWORDS):
         _schedule_followup(context, chat_id)
@@ -225,7 +224,6 @@ async def handle_class_callback(update: Update, context: ContextTypes.DEFAULT_TY
     # photos — отправить все 3 фото
     elif data == "photos":
         await _send_photos(context, chat_id)
-        _schedule_followup(context, chat_id)
 
 
 async def _send_photos(context, chat_id: int):
@@ -237,6 +235,7 @@ async def _send_photos(context, chat_id: int):
         chat_id=chat_id,
         text="Хотите посмотреть наши реальные объекты? Загляните в наш Instagram — там портфолио выполненных работ:\nhttps://www.instagram.com/genex.kz"
     )
+    await context.bot.send_message(chat_id=chat_id, text=FOLLOWUP_TEXT)
 
 
 def _build_order_context(history: list, last_message: str, customer_name: str) -> str:

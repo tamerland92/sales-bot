@@ -211,7 +211,7 @@ def find_by_class(target: float, unit: str, class_name: str, tolerance: float = 
         for match in val_rows:
             cl = f"{name} — {match['engine']} {match['model']}\n"
             cl += f"{desc}\n"
-            cl += f"Номинальная: {match['nom_kw']} кВт / {match['nom_kva']} кВА | Максимальная: {match['max_kw']} кВт / {match['max_kva']} кВА"
+            cl += f"Номинальная мощность: {match['nom_kw']} кВт / {match['nom_kva']} кВА\nМаксимальная мощность: {match['max_kw']} кВт / {match['max_kva']} кВА"
             if match["price_cabinet"]:
                 cl += f"\nКожух с АВР: {match['price_cabinet']}"
             if match["price_open"]:
