@@ -1,8 +1,22 @@
 import os
 import json
+import re
 import time
 import gspread
 from google.oauth2.service_account import Credentials
+from services.currency import get_usd_kzt
+
+
+def _usd_to_kzt(price_str: str) -> str:
+    if not price_str:
+        return ""
+    cleaned = re.sub(r'[US$\s]', '', price_str).replace(",", ".")
+    try:
+        usd = float(cleaned)
+        kzt = usd * get_usd_kzt()
+        return f"{int(kzt):,}".replace(",", " ") + " ₸"
+    except Exception:
+        return price_str
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -213,9 +227,9 @@ def find_by_class(target: float, unit: str, class_name: str, tolerance: float = 
             cl += f"{desc}\n"
             cl += f"Номинальная мощность: {match['nom_kw']} кВт / {match['nom_kva']} кВА\nМаксимальная мощность: {match['max_kw']} кВт / {match['max_kva']} кВА"
             if match["price_cabinet"]:
-                cl += f"\nКожух с АВР: {match['price_cabinet']}"
+                cl += f"\nКожух с АВР: {_usd_to_kzt(match['price_cabinet'])}"
             if match["price_open"]:
-                cl += f"\nОткрытое с АВР: {match['price_open']}"
+                cl += f"\nОткрытое с АВР: {_usd_to_kzt(match['price_open'])}"
             cl += "\nКонтейнерное — цена по запросу"
             blocks.append(cl)
             blocks.append("")
