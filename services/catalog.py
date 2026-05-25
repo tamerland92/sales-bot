@@ -176,20 +176,21 @@ def find_by_power(target: float, unit: str = "kw", tolerance: float = 0.30) -> s
             blocks.append(f"=== {kw} кВт / {val} кВА ===\n")
 
         for cls in CLASS_ORDER:
-            match = next((r for r in val_rows if r["variant"] == cls), None)
-            if not match:
+            matches = [r for r in val_rows if r["variant"] == cls]
+            if not matches:
                 continue
             name = SERIES_NAME.get(cls, cls)
             desc = SERIES_DESC.get(cls, "")
-            cl = f"{name} — {match['engine']} {match['model']}\n"
-            cl += f"{desc}\n"
-            cl += f"Номинальная мощность: {match['nom_kw']} кВт / {match['nom_kva']} кВА\nМаксимальная мощность: {match['max_kw']} кВт / {match['max_kva']} кВА"
-            if match["price_cabinet"]:
-                cl += f"\nКожух с АВР: {match['price_cabinet']}"
-            if match["price_open"]:
-                cl += f"\nОткрытое с АВР: {match['price_open']}"
-            cl += "\nКонтейнерное исполнение — цена по запросу"
-            blocks.append(cl)
-            blocks.append("")
+            for match in matches:
+                cl = f"{name} — {match['engine']} {match['model']}\n"
+                cl += f"{desc}\n"
+                cl += f"Номинальная мощность: {match['nom_kw']} кВт / {match['nom_kva']} кВА\nМаксимальная мощность: {match['max_kw']} кВт / {match['max_kva']} кВА"
+                if match["price_cabinet"]:
+                    cl += f"\nКожух с АВР: {match['price_cabinet']}"
+                if match["price_open"]:
+                    cl += f"\nОткрытое с АВР: {match['price_open']}"
+                cl += "\nКонтейнерное исполнение — цена по запросу"
+                blocks.append(cl)
+                blocks.append("")
 
     return "\n".join(blocks)
